@@ -344,6 +344,17 @@
         showContent('home');
       }, 800);
     }
+
+    // --------------------------
+    // Helper: Update History if "History" tab is active
+    // --------------------------
+    function updateHistoryIfActive() {
+      const activeNav = document.querySelector('.phone-nav a.active');
+      if (activeNav && activeNav.textContent.trim().toLowerCase() === 'history') {
+        showContent('history');
+      }
+    }
+
     // --------------------------
     // Content Templates
     // --------------------------
@@ -412,7 +423,7 @@
       </div>
     `;
 
-    // For Stores – show a list of nearby stores with clickable items
+    // For Stores
     const storeContent = `
       <div class="section-title">Nearby Stores</div>
       <div class="icon-grid">
@@ -435,7 +446,7 @@
       </div>
     `;
 
-    // For Insurance – show available plans
+    // For Insurance
     const insuranceContent = `
       <div class="section-title">Insurance Plans</div>
       <div class="icon-grid">
@@ -458,7 +469,7 @@
       </div>
     `;
 
-    // For Wealth – show available investment options
+    // For Wealth
     const wealthContent = `
       <div class="section-title">Wealth Management</div>
       <div class="icon-grid">
@@ -482,7 +493,7 @@
     `;
 
     // --------------------------
-    // Recharge & Bill Payment Sub-Contents (existing)
+    // Recharge & Bill Payment Sub-Contents
     // --------------------------
     const mobileRechargeContent = `
       <div class="back-button" onclick="showContent('home')">&larr; Back</div>
@@ -528,7 +539,7 @@
     // --------------------------
     // New Sub-Contents for Stores, Insurance & Wealth
     // --------------------------
-    // For Stores:
+    // Stores
     function openStoreSubContent(storeName) {
       const contentArea = document.getElementById('content-area');
       contentArea.innerHTML = `
@@ -565,9 +576,10 @@
       localStorage.setItem('transactionHistory', JSON.stringify(transactions));
       displayNotification(`Purchase at ${storeName} of $${amount.toFixed(2)} successful!`);
       document.getElementById('storePurchaseForm').reset();
+      updateHistoryIfActive();
     }
 
-    // For Insurance:
+    // Insurance
     function openInsuranceSubContent(insuranceType) {
       const contentArea = document.getElementById('content-area');
       contentArea.innerHTML = `
@@ -604,9 +616,10 @@
       localStorage.setItem('transactionHistory', JSON.stringify(transactions));
       displayNotification(`Insurance plan ${insuranceType} purchase of $${amount.toFixed(2)} successful!`);
       document.getElementById('insurancePurchaseForm').reset();
+      updateHistoryIfActive();
     }
 
-    // For Wealth:
+    // Wealth
     function openWealthSubContent(wealthType) {
       const contentArea = document.getElementById('content-area');
       contentArea.innerHTML = `
@@ -643,6 +656,7 @@
       localStorage.setItem('transactionHistory', JSON.stringify(transactions));
       displayNotification(`Investment in ${wealthType} of $${amount.toFixed(2)} successful!`);
       document.getElementById('wealthInvestmentForm').reset();
+      updateHistoryIfActive();
     }
 
     // --------------------------
@@ -670,6 +684,7 @@
         localStorage.setItem('transactionHistory', JSON.stringify(transactions));
         displayNotification(`Mobile recharge of $${amount.toFixed(2)} successful!`);
         document.getElementById('mobileRechargeForm').reset();
+        updateHistoryIfActive();
       } else {
         displayNotification('Password confirmation failed. Please try again.', 'error');
       }
@@ -696,6 +711,7 @@
         localStorage.setItem('transactionHistory', JSON.stringify(transactions));
         displayNotification(`DTH recharge of $${amount.toFixed(2)} successful!`);
         document.getElementById('dthRechargeForm').reset();
+        updateHistoryIfActive();
       } else {
         displayNotification('Password confirmation failed. Please try again.', 'error');
       }
@@ -722,6 +738,7 @@
         localStorage.setItem('transactionHistory', JSON.stringify(transactions));
         displayNotification(`Electricity bill payment of $${amount.toFixed(2)} successful!`);
         document.getElementById('electricityBillForm').reset();
+        updateHistoryIfActive();
       } else {
         displayNotification('Password confirmation failed. Please try again.', 'error');
       }
@@ -748,12 +765,14 @@
         localStorage.setItem('transactionHistory', JSON.stringify(transactions));
         displayNotification(`Credit card payment of $${amount.toFixed(2)} successful!`);
         document.getElementById('creditCardPaymentForm').reset();
+        updateHistoryIfActive();
       } else {
         displayNotification('Password confirmation failed. Please try again.', 'error');
       }
     }
+
     // --------------------------
-    // Check Balance Sub-Content & Handler
+    // Check Balance Submit Handler
     // --------------------------
     function submitCheckBalance(event) {
       event.preventDefault();
@@ -779,10 +798,10 @@
         <p><strong>Current Account Balance:</strong> $${currentAcc.toFixed(2)}</p>
       `;
     }
+
     // --------------------------
     // Open Sub-Content for Home Items
     // --------------------------
-    // Depending on the string passed, open the corresponding view.
     function openSubContent(subSection) {
       const contentArea = document.getElementById('content-area');
       switch (subSection) {
@@ -829,7 +848,7 @@
         case 'creditCardPayment':
           contentArea.innerHTML = creditCardPaymentContent;
           break;
-        // For the sponsored links:
+        // For Sponsored Links:
         case 'store':
           contentArea.innerHTML = storeContent;
           break;
@@ -844,6 +863,7 @@
           break;
       }
     }
+
     // --------------------------
     // Show Content Function for Main Navigation
     // --------------------------
@@ -874,6 +894,87 @@
           break;
       }
     }
+
+    // --------------------------
+    // History Functions
+    // --------------------------
+    function getHistoryContent() {
+      let history = localStorage.getItem('transactionHistory');
+      let transactions = history ? JSON.parse(history) : [];
+      let html = '<div class="section-title">Transaction History</div>';
+      html += `<div style="margin-bottom:10px;">
+                <button onclick="printHistory()" style="padding:8px 12px; margin-right:10px;">Print</button>
+                <button onclick="downloadHistoryPdf()" style="padding:8px 12px;">Download PDF</button>
+              </div>`;
+      if (transactions.length === 0) {
+        html += '<p>No transactions yet.</p>';
+      } else {
+        html += '<div id="historyContainer">';
+        html += '<table>';
+        html += '<thead><tr><th>Transaction</th><th>Actions</th></tr></thead>';
+        html += '<tbody>';
+        transactions.forEach((tx, index) => {
+          html += `<tr>
+                    <td>${tx}</td>
+                    <td>
+                      <button onclick="copyTransaction(${index})" style="padding:4px 8px; margin-right: 5px;">Copy</button>
+                      <button onclick="deleteTransaction(${index})" style="padding:4px 8px;">Delete</button>
+                    </td>
+                  </tr>`;
+        });
+        html += '</tbody></table></div>';
+      }
+      return html;
+    }
+    function copyTransaction(index) {
+      let history = localStorage.getItem('transactionHistory');
+      let transactions = history ? JSON.parse(history) : [];
+      let tx = transactions[index];
+      navigator.clipboard.writeText(tx)
+        .then(() => displayNotification('Transaction copied to clipboard'))
+        .catch(err => displayNotification('Failed to copy transaction', 'error'));
+    }
+    function deleteTransaction(index) {
+      let history = localStorage.getItem('transactionHistory');
+      let transactions = history ? JSON.parse(history) : [];
+      if (confirm('Are you sure you want to delete this transaction?')) {
+        transactions.splice(index, 1);
+        localStorage.setItem('transactionHistory', JSON.stringify(transactions));
+        displayNotification('Transaction deleted');
+        showContent('history'); // Refresh the history view
+      }
+    }
+    function printHistory() {
+      const historyContentEl = document.getElementById('historyContainer');
+      if (historyContentEl) {
+        const printWindow = window.open('', '', 'height=600,width=800');
+        printWindow.document.write('<html><head><title>Transaction History</title>');
+        printWindow.document.write('<style>table { width: 100%; border-collapse: collapse; } th, td { border: 1px solid #ccc; padding: 8px 12px; text-align: left; } th { background-color: #f4f4f4; }</style>');
+        printWindow.document.write('</head><body >');
+        printWindow.document.write(historyContentEl.outerHTML);
+        printWindow.document.write('</body></html>');
+        printWindow.document.close();
+        printWindow.print();
+      } else {
+        displayNotification('No transaction history available to print', 'error');
+      }
+    }
+    function downloadHistoryPdf() {
+      const element = document.getElementById('historyContainer');
+      if (!element) {
+        displayNotification('No transaction history to download', 'error');
+        return;
+      }
+      var opt = {
+        margin: 0.5,
+        filename: 'transaction_history.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+      html2pdf().set(opt).from(element).save();
+    }
+
     // --------------------------
     // Listen for Enter key press on login form fields
     // --------------------------
