@@ -324,18 +324,28 @@
       document.getElementById('register-form').style.display = 'none';
     }
     // --------------------------
-    // Enter the main app view
+    // Enter the main app view and initialize balances if needed
     // --------------------------
     function enterApp() {
       document.getElementById("splash").classList.add("fade-out");
       setTimeout(function () {
         document.getElementById("splash").style.display = "none";
         document.getElementById("data").style.display = "flex";
+        // Initialize balances if not set
+        if (!localStorage.getItem('balance_' + currentUser)) {
+          localStorage.setItem('balance_' + currentUser, 1000);
+        }
+        if (!localStorage.getItem('balance_' + currentUser + '_savings')) {
+          localStorage.setItem('balance_' + currentUser + '_savings', 1000);
+        }
+        if (!localStorage.getItem('balance_' + currentUser + '_current')) {
+          localStorage.setItem('balance_' + currentUser + '_current', 500);
+        }
         showContent('home');
       }, 800);
     }
     // --------------------------
-    // Main Content Templates
+    // Content Templates
     // --------------------------
     const homeContent = `
       <div class="section-title">Transfer Money</div>
@@ -365,19 +375,19 @@
       <div class="section-title">Recharge & Pay Bills</div>
       <div class="bill-section">
         <div class="icon-grid">
-          <div class="icon-item">
+          <div class="icon-item" onclick="openSubContent('mobileRecharge')">
             <img src="https://via.placeholder.com/40" alt="Mobile">
             <span>Mobile</span>
           </div>
-          <div class="icon-item">
+          <div class="icon-item" onclick="openSubContent('dthRecharge')">
             <img src="https://via.placeholder.com/40" alt="DTH">
             <span>DTH</span>
           </div>
-          <div class="icon-item">
+          <div class="icon-item" onclick="openSubContent('electricityBill')">
             <img src="https://via.placeholder.com/40" alt="Electricity">
             <span>Electricity</span>
           </div>
-          <div class="icon-item">
+          <div class="icon-item" onclick="openSubContent('creditCardPayment')">
             <img src="https://via.placeholder.com/40" alt="Credit Card">
             <span>Credit Card</span>
           </div>
@@ -386,152 +396,408 @@
       <div class="section-title">Sponsored Links</div>
       <div class="sponsored-links">
         <div class="icon-grid">
-          <div class="icon-item">
+          <div class="icon-item" onclick="openSubContent('store')">
             <img src="https://via.placeholder.com/40" alt="Store">
             <span>Stores</span>
           </div>
-          <div class="icon-item">
+          <div class="icon-item" onclick="openSubContent('insurance')">
             <img src="https://via.placeholder.com/40" alt="Insurance">
             <span>Insurance</span>
           </div>
-          <div class="icon-item">
+          <div class="icon-item" onclick="openSubContent('wealth')">
             <img src="https://via.placeholder.com/40" alt="Wealth">
             <span>Wealth</span>
           </div>
         </div>
       </div>
     `;
+
+    // For Stores – show a list of nearby stores with clickable items
     const storeContent = `
       <div class="section-title">Nearby Stores</div>
       <div class="icon-grid">
-        <div class="icon-item">
+        <div class="icon-item" onclick="openStoreSubContent('Grocery Store')">
           <img src="https://via.placeholder.com/40" alt="Grocery Store">
           <span>Grocery Store</span>
         </div>
-        <div class="icon-item">
+        <div class="icon-item" onclick="openStoreSubContent('Electronics Store')">
           <img src="https://via.placeholder.com/40" alt="Electronics Store">
           <span>Electronics</span>
         </div>
-        <div class="icon-item">
+        <div class="icon-item" onclick="openStoreSubContent('Clothing Store')">
           <img src="https://via.placeholder.com/40" alt="Clothing Store">
           <span>Clothing</span>
         </div>
-        <div class="icon-item">
+        <div class="icon-item" onclick="openStoreSubContent('Pharmacy')">
           <img src="https://via.placeholder.com/40" alt="Pharmacy">
           <span>Pharmacy</span>
         </div>
       </div>
     `;
+
+    // For Insurance – show available plans
     const insuranceContent = `
       <div class="section-title">Insurance Plans</div>
       <div class="icon-grid">
-        <div class="icon-item">
+        <div class="icon-item" onclick="openInsuranceSubContent('Health Insurance')">
           <img src="https://via.placeholder.com/40" alt="Health Insurance">
           <span>Health Insurance</span>
         </div>
-        <div class="icon-item">
+        <div class="icon-item" onclick="openInsuranceSubContent('Car Insurance')">
           <img src="https://via.placeholder.com/40" alt="Car Insurance">
           <span>Car Insurance</span>
         </div>
-        <div class="icon-item">
+        <div class="icon-item" onclick="openInsuranceSubContent('Home Insurance')">
           <img src="https://via.placeholder.com/40" alt="Home Insurance">
           <span>Home Insurance</span>
         </div>
-        <div class="icon-item">
+        <div class="icon-item" onclick="openInsuranceSubContent('Travel Insurance')">
           <img src="https://via.placeholder.com/40" alt="Travel Insurance">
           <span>Travel Insurance</span>
         </div>
       </div>
     `;
+
+    // For Wealth – show available investment options
     const wealthContent = `
       <div class="section-title">Wealth Management</div>
       <div class="icon-grid">
-        <div class="icon-item">
+        <div class="icon-item" onclick="openWealthSubContent('Investments')">
           <img src="https://via.placeholder.com/40" alt="Investments">
           <span>Investments</span>
         </div>
-        <div class="icon-item">
+        <div class="icon-item" onclick="openWealthSubContent('Retirement Plans')">
           <img src="https://via.placeholder.com/40" alt="Retirement Plans">
           <span>Retirement Plans</span>
         </div>
-        <div class="icon-item">
+        <div class="icon-item" onclick="openWealthSubContent('Mutual Funds')">
           <img src="https://via.placeholder.com/40" alt="Mutual Funds">
           <span>Mutual Funds</span>
         </div>
-        <div class="icon-item">
+        <div class="icon-item" onclick="openWealthSubContent('Tax Planning')">
           <img src="https://via.placeholder.com/40" alt="Tax Planning">
           <span>Tax Planning</span>
         </div>
       </div>
     `;
+
     // --------------------------
-    // Updated History view with table format, copy & delete buttons, plus print & PDF options
-    function getHistoryContent() {
-      let history = localStorage.getItem('transactionHistory');
-      let transactions = history ? JSON.parse(history) : [];
-      let html = '<div class="section-title">Transaction History</div>';
-      html += `<div style="margin-bottom:10px;">
-                <button onclick="printHistory()" style="padding:8px 12px; margin-right:10px;">Print</button>
-                <button onclick="downloadHistoryPdf()" style="padding:8px 12px;">Download PDF</button>
-              </div>`;
-      if (transactions.length === 0) {
-        html += '<p>No transactions yet.</p>';
-      } else {
-        html += '<div id="historyContainer">';
-        html += '<table>';
-        html += '<thead><tr><th>Transaction</th><th>Actions</th></tr></thead>';
-        html += '<tbody>';
-        transactions.forEach((tx, index) => {
-          html += `<tr>
-                    <td>${tx}</td>
-                    <td>
-                      <button onclick="copyTransaction(${index})" style="padding:4px 8px; margin-right: 5px;">Copy</button>
-                      <button onclick="deleteTransaction(${index})" style="padding:4px 8px;">Delete</button>
-                    </td>
-                  </tr>`;
-        });
-        html += '</tbody></table></div>';
-      }
-      return html;
-    }
-    const historyContent = () => getHistoryContent();
+    // Recharge & Bill Payment Sub-Contents (existing)
     // --------------------------
-    // Sub-content Templates for Home Items
-    // --------------------------
-    const mobileToMobileContent = `
+    const mobileRechargeContent = `
       <div class="back-button" onclick="showContent('home')">&larr; Back</div>
-      <div class="section-title">Mobile to Mobile Transfer</div>
-      <p>Please fill in the details below and confirm with your password.</p>
-      <form id="mobileTransferForm" onsubmit="submitMobileTransfer(event)">
-        <input type="text" id="recipientNumber" placeholder="Recipient Mobile Number" required style="margin-bottom:10px; padding:8px; width:90%;">
-        <input type="number" id="transferAmount" placeholder="Amount" required style="margin-bottom:10px; padding:8px; width:90%;">
-        <input type="password" id="confirmPassword" placeholder="Enter your password" required style="margin-bottom:10px; padding:8px; width:90%;">
-        <button type="submit" style="padding:10px 20px; background-color:#6C45D5; color:#fff; border:none; border-radius:5px; cursor:pointer;">Transfer</button>
+      <div class="section-title">Mobile Recharge</div>
+      <form id="mobileRechargeForm" onsubmit="submitMobileRecharge(event)">
+        <input type="text" id="mobileNumber" placeholder="Mobile Number" required style="margin-bottom:10px; padding:8px; width:90%;">
+        <input type="number" id="rechargeAmount" placeholder="Recharge Amount" required style="margin-bottom:10px; padding:8px; width:90%;">
+        <input type="password" id="rechargePassword" placeholder="Enter your password" required style="margin-bottom:10px; padding:8px; width:90%;">
+        <button type="submit" style="padding:10px 20px; background-color:#6C45D5; color:#fff; border:none; border-radius:5px; cursor:pointer;">Recharge</button>
       </form>
     `;
-    const toBankContent = `
+    const dthRechargeContent = `
       <div class="back-button" onclick="showContent('home')">&larr; Back</div>
-      <div class="section-title">Transfer to Bank</div>
-      <p>This is the Transfer to Bank page.</p>
+      <div class="section-title">DTH Recharge</div>
+      <form id="dthRechargeForm" onsubmit="submitDthRecharge(event)">
+        <input type="text" id="dthCustomerId" placeholder="Customer ID" required style="margin-bottom:10px; padding:8px; width:90%;">
+        <input type="number" id="dthRechargeAmount" placeholder="Recharge Amount" required style="margin-bottom:10px; padding:8px; width:90%;">
+        <input type="password" id="dthRechargePassword" placeholder="Enter your password" required style="margin-bottom:10px; padding:8px; width:90%;">
+        <button type="submit" style="padding:10px 20px; background-color:#6C45D5; color:#fff; border:none; border-radius:5px; cursor:pointer;">Recharge</button>
+      </form>
     `;
-    const toSelfContent = `
+    const electricityBillContent = `
       <div class="back-button" onclick="showContent('home')">&larr; Back</div>
-      <div class="section-title">Transfer to Self</div>
-      <p>This is the Transfer to Self page.</p>
+      <div class="section-title">Electricity Bill Payment</div>
+      <form id="electricityBillForm" onsubmit="submitElectricityBill(event)">
+        <input type="text" id="electricityConsumerId" placeholder="Consumer ID" required style="margin-bottom:10px; padding:8px; width:90%;">
+        <input type="number" id="electricityBillAmount" placeholder="Bill Amount" required style="margin-bottom:10px; padding:8px; width:90%;">
+        <input type="password" id="electricityBillPassword" placeholder="Enter your password" required style="margin-bottom:10px; padding:8px; width:90%;">
+        <button type="submit" style="padding:10px 20px; background-color:#6C45D5; color:#fff; border:none; border-radius:5px; cursor:pointer;">Pay Bill</button>
+      </form>
     `;
-    const checkBalanceContent = `
+    const creditCardPaymentContent = `
       <div class="back-button" onclick="showContent('home')">&larr; Back</div>
-      <div class="section-title">Check Balance</div>
-      <p>This is the Check Balance page.</p>
+      <div class="section-title">Credit Card Payment</div>
+      <form id="creditCardPaymentForm" onsubmit="submitCreditCardPayment(event)">
+        <input type="text" id="creditCardNumber" placeholder="Credit Card Number" required style="margin-bottom:10px; padding:8px; width:90%;">
+        <input type="number" id="creditCardPaymentAmount" placeholder="Payment Amount" required style="margin-bottom:10px; padding:8px; width:90%;">
+        <input type="password" id="creditCardPaymentPassword" placeholder="Enter your password" required style="margin-bottom:10px; padding:8px; width:90%;">
+        <button type="submit" style="padding:10px 20px; background-color:#6C45D5; color:#fff; border:none; border-radius:5px; cursor:pointer;">Pay Now</button>
+      </form>
     `;
+
     // --------------------------
-    // Open Sub-Content Function for Home Items
+    // New Sub-Contents for Stores, Insurance & Wealth
     // --------------------------
+    // For Stores:
+    function openStoreSubContent(storeName) {
+      const contentArea = document.getElementById('content-area');
+      contentArea.innerHTML = `
+        <div class="back-button" onclick="showContent('stores')">&larr; Back</div>
+        <div class="section-title">${storeName} Purchase</div>
+        <form id="storePurchaseForm" onsubmit="submitStorePurchase(event, '${storeName}')">
+          <input type="number" id="storePurchaseAmount" placeholder="Enter purchase amount" required style="margin-bottom:10px; padding:8px; width:90%;">
+          <input type="password" id="storePurchasePassword" placeholder="Enter your password" required style="margin-bottom:10px; padding:8px; width:90%;">
+          <button type="submit" style="padding:10px 20px; background-color:#6C45D5; color:#fff; border:none; border-radius:5px; cursor:pointer;">Purchase</button>
+        </form>
+      `;
+    }
+    function submitStorePurchase(event, storeName) {
+      event.preventDefault();
+      const amount = parseFloat(document.getElementById('storePurchaseAmount').value);
+      const enteredPassword = document.getElementById('storePurchasePassword').value;
+      const storedPassword = localStorage.getItem(currentUser);
+      if (enteredPassword !== storedPassword) {
+        displayNotification('Password confirmation failed. Please try again.', 'error');
+        return;
+      }
+      const balanceKey = 'balance_' + currentUser;
+      let overallBalance = parseFloat(localStorage.getItem(balanceKey)) || 0;
+      if (amount > overallBalance) {
+        displayNotification('Insufficient funds for purchase.', 'error');
+        return;
+      }
+      overallBalance -= amount;
+      localStorage.setItem(balanceKey, overallBalance);
+      const transaction = `Store Purchase at ${storeName} of $${amount.toFixed(2)} on ${new Date().toLocaleString()}`;
+      let history = localStorage.getItem('transactionHistory');
+      let transactions = history ? JSON.parse(history) : [];
+      transactions.push(transaction);
+      localStorage.setItem('transactionHistory', JSON.stringify(transactions));
+      displayNotification(`Purchase at ${storeName} of $${amount.toFixed(2)} successful!`);
+      document.getElementById('storePurchaseForm').reset();
+    }
+
+    // For Insurance:
+    function openInsuranceSubContent(insuranceType) {
+      const contentArea = document.getElementById('content-area');
+      contentArea.innerHTML = `
+        <div class="back-button" onclick="showContent('insurance')">&larr; Back</div>
+        <div class="section-title">${insuranceType} Plan Purchase</div>
+        <form id="insurancePurchaseForm" onsubmit="submitInsurancePurchase(event, '${insuranceType}')">
+          <input type="number" id="insurancePremiumAmount" placeholder="Enter premium amount" required style="margin-bottom:10px; padding:8px; width:90%;">
+          <input type="password" id="insurancePurchasePassword" placeholder="Enter your password" required style="margin-bottom:10px; padding:8px; width:90%;">
+          <button type="submit" style="padding:10px 20px; background-color:#6C45D5; color:#fff; border:none; border-radius:5px; cursor:pointer;">Purchase Plan</button>
+        </form>
+      `;
+    }
+    function submitInsurancePurchase(event, insuranceType) {
+      event.preventDefault();
+      const amount = parseFloat(document.getElementById('insurancePremiumAmount').value);
+      const enteredPassword = document.getElementById('insurancePurchasePassword').value;
+      const storedPassword = localStorage.getItem(currentUser);
+      if (enteredPassword !== storedPassword) {
+        displayNotification('Password confirmation failed. Please try again.', 'error');
+        return;
+      }
+      const balanceKey = 'balance_' + currentUser;
+      let overallBalance = parseFloat(localStorage.getItem(balanceKey)) || 0;
+      if (amount > overallBalance) {
+        displayNotification('Insufficient funds for insurance purchase.', 'error');
+        return;
+      }
+      overallBalance -= amount;
+      localStorage.setItem(balanceKey, overallBalance);
+      const transaction = `Insurance Plan Purchase: ${insuranceType} for $${amount.toFixed(2)} on ${new Date().toLocaleString()}`;
+      let history = localStorage.getItem('transactionHistory');
+      let transactions = history ? JSON.parse(history) : [];
+      transactions.push(transaction);
+      localStorage.setItem('transactionHistory', JSON.stringify(transactions));
+      displayNotification(`Insurance plan ${insuranceType} purchase of $${amount.toFixed(2)} successful!`);
+      document.getElementById('insurancePurchaseForm').reset();
+    }
+
+    // For Wealth:
+    function openWealthSubContent(wealthType) {
+      const contentArea = document.getElementById('content-area');
+      contentArea.innerHTML = `
+        <div class="back-button" onclick="showContent('wealth')">&larr; Back</div>
+        <div class="section-title">${wealthType} Investment</div>
+        <form id="wealthInvestmentForm" onsubmit="submitWealthInvestment(event, '${wealthType}')">
+          <input type="number" id="wealthInvestmentAmount" placeholder="Enter investment amount" required style="margin-bottom:10px; padding:8px; width:90%;">
+          <input type="password" id="wealthInvestmentPassword" placeholder="Enter your password" required style="margin-bottom:10px; padding:8px; width:90%;">
+          <button type="submit" style="padding:10px 20px; background-color:#6C45D5; color:#fff; border:none; border-radius:5px; cursor:pointer;">Invest</button>
+        </form>
+      `;
+    }
+    function submitWealthInvestment(event, wealthType) {
+      event.preventDefault();
+      const amount = parseFloat(document.getElementById('wealthInvestmentAmount').value);
+      const enteredPassword = document.getElementById('wealthInvestmentPassword').value;
+      const storedPassword = localStorage.getItem(currentUser);
+      if (enteredPassword !== storedPassword) {
+        displayNotification('Password confirmation failed. Please try again.', 'error');
+        return;
+      }
+      const balanceKey = 'balance_' + currentUser;
+      let overallBalance = parseFloat(localStorage.getItem(balanceKey)) || 0;
+      if (amount > overallBalance) {
+        displayNotification('Insufficient funds for investment.', 'error');
+        return;
+      }
+      overallBalance -= amount;
+      localStorage.setItem(balanceKey, overallBalance);
+      const transaction = `Wealth Investment in ${wealthType} of $${amount.toFixed(2)} on ${new Date().toLocaleString()}`;
+      let history = localStorage.getItem('transactionHistory');
+      let transactions = history ? JSON.parse(history) : [];
+      transactions.push(transaction);
+      localStorage.setItem('transactionHistory', JSON.stringify(transactions));
+      displayNotification(`Investment in ${wealthType} of $${amount.toFixed(2)} successful!`);
+      document.getElementById('wealthInvestmentForm').reset();
+    }
+
+    // --------------------------
+    // Recharge & Bill Payment Submit Handlers
+    // --------------------------
+    function submitMobileRecharge(event) {
+      event.preventDefault();
+      const mobileNumber = document.getElementById('mobileNumber').value;
+      const amount = parseFloat(document.getElementById('rechargeAmount').value);
+      const enteredPassword = document.getElementById('rechargePassword').value;
+      const storedPassword = localStorage.getItem(currentUser);
+      if (enteredPassword === storedPassword) {
+        const balanceKey = 'balance_' + currentUser;
+        let overallBalance = parseFloat(localStorage.getItem(balanceKey)) || 0;
+        if (amount > overallBalance) {
+          displayNotification('Insufficient funds for mobile recharge.', 'error');
+          return;
+        }
+        overallBalance -= amount;
+        localStorage.setItem(balanceKey, overallBalance);
+        const transaction = `Mobile Recharge of $${amount.toFixed(2)} for mobile ${mobileNumber} on ${new Date().toLocaleString()}`;
+        let history = localStorage.getItem('transactionHistory');
+        let transactions = history ? JSON.parse(history) : [];
+        transactions.push(transaction);
+        localStorage.setItem('transactionHistory', JSON.stringify(transactions));
+        displayNotification(`Mobile recharge of $${amount.toFixed(2)} successful!`);
+        document.getElementById('mobileRechargeForm').reset();
+      } else {
+        displayNotification('Password confirmation failed. Please try again.', 'error');
+      }
+    }
+    function submitDthRecharge(event) {
+      event.preventDefault();
+      const customerId = document.getElementById('dthCustomerId').value;
+      const amount = parseFloat(document.getElementById('dthRechargeAmount').value);
+      const enteredPassword = document.getElementById('dthRechargePassword').value;
+      const storedPassword = localStorage.getItem(currentUser);
+      if (enteredPassword === storedPassword) {
+        const balanceKey = 'balance_' + currentUser;
+        let overallBalance = parseFloat(localStorage.getItem(balanceKey)) || 0;
+        if (amount > overallBalance) {
+          displayNotification('Insufficient funds for DTH recharge.', 'error');
+          return;
+        }
+        overallBalance -= amount;
+        localStorage.setItem(balanceKey, overallBalance);
+        const transaction = `DTH Recharge of $${amount.toFixed(2)} for Customer ID ${customerId} on ${new Date().toLocaleString()}`;
+        let history = localStorage.getItem('transactionHistory');
+        let transactions = history ? JSON.parse(history) : [];
+        transactions.push(transaction);
+        localStorage.setItem('transactionHistory', JSON.stringify(transactions));
+        displayNotification(`DTH recharge of $${amount.toFixed(2)} successful!`);
+        document.getElementById('dthRechargeForm').reset();
+      } else {
+        displayNotification('Password confirmation failed. Please try again.', 'error');
+      }
+    }
+    function submitElectricityBill(event) {
+      event.preventDefault();
+      const consumerId = document.getElementById('electricityConsumerId').value;
+      const amount = parseFloat(document.getElementById('electricityBillAmount').value);
+      const enteredPassword = document.getElementById('electricityBillPassword').value;
+      const storedPassword = localStorage.getItem(currentUser);
+      if (enteredPassword === storedPassword) {
+        const balanceKey = 'balance_' + currentUser;
+        let overallBalance = parseFloat(localStorage.getItem(balanceKey)) || 0;
+        if (amount > overallBalance) {
+          displayNotification('Insufficient funds for electricity bill payment.', 'error');
+          return;
+        }
+        overallBalance -= amount;
+        localStorage.setItem(balanceKey, overallBalance);
+        const transaction = `Electricity Bill Payment of $${amount.toFixed(2)} for Consumer ID ${consumerId} on ${new Date().toLocaleString()}`;
+        let history = localStorage.getItem('transactionHistory');
+        let transactions = history ? JSON.parse(history) : [];
+        transactions.push(transaction);
+        localStorage.setItem('transactionHistory', JSON.stringify(transactions));
+        displayNotification(`Electricity bill payment of $${amount.toFixed(2)} successful!`);
+        document.getElementById('electricityBillForm').reset();
+      } else {
+        displayNotification('Password confirmation failed. Please try again.', 'error');
+      }
+    }
+    function submitCreditCardPayment(event) {
+      event.preventDefault();
+      const cardNumber = document.getElementById('creditCardNumber').value;
+      const amount = parseFloat(document.getElementById('creditCardPaymentAmount').value);
+      const enteredPassword = document.getElementById('creditCardPaymentPassword').value;
+      const storedPassword = localStorage.getItem(currentUser);
+      if (enteredPassword === storedPassword) {
+        const balanceKey = 'balance_' + currentUser;
+        let overallBalance = parseFloat(localStorage.getItem(balanceKey)) || 0;
+        if (amount > overallBalance) {
+          displayNotification('Insufficient funds for credit card payment.', 'error');
+          return;
+        }
+        overallBalance -= amount;
+        localStorage.setItem(balanceKey, overallBalance);
+        const transaction = `Credit Card Payment of $${amount.toFixed(2)} for Card ${cardNumber} on ${new Date().toLocaleString()}`;
+        let history = localStorage.getItem('transactionHistory');
+        let transactions = history ? JSON.parse(history) : [];
+        transactions.push(transaction);
+        localStorage.setItem('transactionHistory', JSON.stringify(transactions));
+        displayNotification(`Credit card payment of $${amount.toFixed(2)} successful!`);
+        document.getElementById('creditCardPaymentForm').reset();
+      } else {
+        displayNotification('Password confirmation failed. Please try again.', 'error');
+      }
+    }
+    // --------------------------
+    // Check Balance Sub-Content & Handler
+    // --------------------------
+    function submitCheckBalance(event) {
+      event.preventDefault();
+      const entered = document.getElementById('balancePassword').value;
+      const storedPassword = localStorage.getItem(currentUser);
+      if (entered === storedPassword) {
+        refreshBalance();
+        document.getElementById('checkBalanceForm').style.display = 'none';
+        document.getElementById('refreshBtn').style.display = 'inline-block';
+      } else {
+        displayNotification('Incorrect password for checking balance.', 'error');
+      }
+    }
+    function refreshBalance() {
+      const balanceKey = 'balance_' + currentUser;
+      let bankBalance = parseFloat(localStorage.getItem(balanceKey)) || 0;
+      let savings = parseFloat(localStorage.getItem('balance_' + currentUser + '_savings')) || 0;
+      let currentAcc = parseFloat(localStorage.getItem('balance_' + currentUser + '_current')) || 0;
+      const balanceDisplay = document.getElementById('balanceDisplay');
+      balanceDisplay.innerHTML = `
+        <p><strong>Overall Bank Balance:</strong> $${bankBalance.toFixed(2)}</p>
+        <p><strong>Savings Account Balance:</strong> $${savings.toFixed(2)}</p>
+        <p><strong>Current Account Balance:</strong> $${currentAcc.toFixed(2)}</p>
+      `;
+    }
+    // --------------------------
+    // Open Sub-Content for Home Items
+    // --------------------------
+    // Depending on the string passed, open the corresponding view.
     function openSubContent(subSection) {
       const contentArea = document.getElementById('content-area');
       switch (subSection) {
         case 'mobileToMobile':
-          contentArea.innerHTML = mobileToMobileContent;
+          contentArea.innerHTML = `
+            <div class="back-button" onclick="showContent('home')">&larr; Back</div>
+            <div class="section-title">Mobile to Mobile Transfer</div>
+            <p>Please fill in the details below and confirm with your password.</p>
+            <form id="mobileTransferForm" onsubmit="submitMobileTransfer(event)">
+              <input type="text" id="recipientNumber" placeholder="Recipient Mobile Number" required style="margin-bottom:10px; padding:8px; width:90%;">
+              <input type="number" id="transferAmount" placeholder="Amount" required style="margin-bottom:10px; padding:8px; width:90%;">
+              <input type="password" id="confirmPassword" placeholder="Enter your password" required style="margin-bottom:10px; padding:8px; width:90%;">
+              <button type="submit" style="padding:10px 20px; background-color:#6C45D5; color:#fff; border:none; border-radius:5px; cursor:pointer;">Transfer</button>
+            </form>
+          `;
           break;
         case 'toBank':
           contentArea.innerHTML = toBankContent;
@@ -540,7 +806,38 @@
           contentArea.innerHTML = toSelfContent;
           break;
         case 'checkBalance':
-          contentArea.innerHTML = checkBalanceContent;
+          contentArea.innerHTML = `
+            <div class="back-button" onclick="showContent('home')">&larr; Back</div>
+            <div class="section-title">Check Balance</div>
+            <form id="checkBalanceForm" onsubmit="submitCheckBalance(event)">
+              <input type="password" id="balancePassword" placeholder="Enter your password" required style="margin-bottom:10px; padding:8px; width:90%;">
+              <button type="submit" style="padding:10px 20px; background-color:#6C45D5; color:#fff; border:none; border-radius:5px; cursor:pointer;">Submit</button>
+            </form>
+            <div id="balanceDisplay"></div>
+            <button onclick="refreshBalance()" style="padding:8px 12px; margin-top:10px; display:none;" id="refreshBtn">Refresh Balance</button>
+          `;
+          break;
+        case 'mobileRecharge':
+          contentArea.innerHTML = mobileRechargeContent;
+          break;
+        case 'dthRecharge':
+          contentArea.innerHTML = dthRechargeContent;
+          break;
+        case 'electricityBill':
+          contentArea.innerHTML = electricityBillContent;
+          break;
+        case 'creditCardPayment':
+          contentArea.innerHTML = creditCardPaymentContent;
+          break;
+        // For the sponsored links:
+        case 'store':
+          contentArea.innerHTML = storeContent;
+          break;
+        case 'insurance':
+          contentArea.innerHTML = insuranceContent;
+          break;
+        case 'wealth':
+          contentArea.innerHTML = wealthContent;
           break;
         default:
           showContent('home');
@@ -572,82 +869,10 @@
           navLinks[3].classList.add('active');
           break;
         case 'history':
-          contentArea.innerHTML = historyContent();
+          contentArea.innerHTML = getHistoryContent();
           navLinks[4].classList.add('active');
           break;
       }
-    }
-    // --------------------------
-    // Submit handler for Mobile to Mobile Transfer Form
-    // --------------------------
-    function submitMobileTransfer(event) {
-      event.preventDefault();
-      const recipient = document.getElementById('recipientNumber').value;
-      const amount = document.getElementById('transferAmount').value;
-      const enteredPassword = document.getElementById('confirmPassword').value;
-      const storedPassword = localStorage.getItem(currentUser);
-      if (enteredPassword === storedPassword) {
-        const transaction = `Transfer of $${amount} to ${recipient} on ${new Date().toLocaleString()}`;
-        let history = localStorage.getItem('transactionHistory');
-        let transactions = history ? JSON.parse(history) : [];
-        transactions.push(transaction);
-        localStorage.setItem('transactionHistory', JSON.stringify(transactions));
-        displayNotification(`Transfer of $${amount} to ${recipient} successful!`);
-      } else {
-        displayNotification('Password confirmation failed. Please try again.', 'error');
-      }
-    }
-    // --------------------------
-    // Functions for History Section Actions
-    // --------------------------
-    function copyTransaction(index) {
-      let history = localStorage.getItem('transactionHistory');
-      let transactions = history ? JSON.parse(history) : [];
-      let tx = transactions[index];
-      navigator.clipboard.writeText(tx)
-        .then(() => displayNotification('Transaction copied to clipboard'))
-        .catch(err => displayNotification('Failed to copy transaction', 'error'));
-    }
-    function deleteTransaction(index) {
-      let history = localStorage.getItem('transactionHistory');
-      let transactions = history ? JSON.parse(history) : [];
-      if (confirm('Are you sure you want to delete this transaction?')) {
-        transactions.splice(index, 1);
-        localStorage.setItem('transactionHistory', JSON.stringify(transactions));
-        displayNotification('Transaction deleted');
-        showContent('history'); // Refresh the history view
-      }
-    }
-    function printHistory() {
-      // Open a new window with just the history table for printing
-      const historyContentEl = document.getElementById('historyContainer');
-      if (historyContentEl) {
-        const printWindow = window.open('', '', 'height=600,width=800');
-        printWindow.document.write('<html><head><title>Transaction History</title>');
-        printWindow.document.write('<style>table { width: 100%; border-collapse: collapse; } th, td { border: 1px solid #ccc; padding: 8px 12px; text-align: left; } th { background-color: #f4f4f4; }</style>');
-        printWindow.document.write('</head><body >');
-        printWindow.document.write(historyContentEl.outerHTML);
-        printWindow.document.write('</body></html>');
-        printWindow.document.close();
-        printWindow.print();
-      } else {
-        displayNotification('No transaction history available to print', 'error');
-      }
-    }
-    function downloadHistoryPdf() {
-      const element = document.getElementById('historyContainer');
-      if (!element) {
-        displayNotification('No transaction history to download', 'error');
-        return;
-      }
-      var opt = {
-        margin:       0.5,
-        filename:     'transaction_history.pdf',
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2 },
-        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
-      };
-      html2pdf().set(opt).from(element).save();
     }
     // --------------------------
     // Listen for Enter key press on login form fields
