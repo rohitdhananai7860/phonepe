@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Phone Pe</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      position: relative;
+    }
+    /* Notification styling */
+    #notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 15px 20px;
+      background-color: #6C45D5;
+      color: #fff;
+      border-radius: 5px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s ease;
+      z-index: 10000;
+    }
+    #notification.error { background-color: #e74c3c; }
+    /* Animations */
+    @keyframes splashIn {
+      0% { opacity: 0; transform: scale(0.8); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    @keyframes splashOut {
+      0% { opacity: 1; }
+      100% { opacity: 0; transform: scale(0.95); }
+    }
+    @keyframes phoneSlideUp {
+      0% { opacity: 0; transform: translateY(50px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes iconSpin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes navHover {
+      0% { transform: scale(1); }
+      100% { transform: scale(1.1); }
+    }
+    #splash {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background-color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      z-index: 9999;
+      animation: splashIn 1s ease forwards;
+    }
+    #splash.fade-out { animation: splashOut 0.8s ease forwards; }
+    #splash img { width: 150px; height: 150px; margin-bottom: 20px; }
+    #data {
+      display: none;
+      width: 100%;
+      min-height: 100vh;
+      padding: 20px;
+      justify-content: center;
+      align-items: center;
+      animation: phoneSlideUp 0.8s ease forwards;
+    }
+    .phone-mock {
+      width: 360px;
+      max-width: 100%;
+      background-color: #ffffff;
+      border-radius: 30px;
+      overflow: hidden;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+    }
+    .phone-header {
+      background-color: #6C45D5;
+      color: #fff;
+      padding: 20px;
+      text-align: center;
+    }
+    .phone-content { padding: 20px; flex: 1; overflow-y: auto; }
+    .section-title { font-weight: bold; margin-bottom: 10px; font-size: 16px; }
+    .icon-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px; margin-bottom: 20px;
+    }
+    .icon-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      font-size: 14px;
+      color: #555;
+      cursor: pointer;
+      transition: transform 0.3s;
+    }
+    .icon-item:hover img { animation: iconSpin 0.7s ease; }
+    .icon-item:hover { transform: scale(1.1); }
+    .upi-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .upi-item {
+      flex: 1;
+      min-width: 100px;
+      background-color: #e9e5f7;
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+      font-size: 14px;
+      color: #6C45D5;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .bill-section {
+      background-color: #f5f5f5;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 20px;
+    }
+    .phone-nav {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 10px 0;
+      border-top: 1px solid #ccc;
+      background-color: #fff;
+      transition: background-color 0.3s;
+    }
+    .phone-nav a {
+      text-decoration: none;
+      color: #666;
+      font-size: 14px;
+      transition: color 0.3s, transform 0.3s;
+      cursor: pointer;
+    }
+    .phone-nav a.active {
+      color: #6C45D5;
+      font-weight: bold;
+      transform: scale(1.1);
+    }
+    .phone-nav a:hover {
+      color: #6C45D5;
+      animation: navHover 0.3s forwards;
+    }
+    .login-form,
+    .register-form {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 20px;
+    }
+    .login-form input,
+    .register-form input {
+      margin: 10px 0;
+      padding: 10px;
+      width: 80%;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .login-form button,
+    .register-form button {
+      padding: 10px 20px;
+      background-color: #6C45D5;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .login-form button:hover,
+    .register-form button:hover {
+      background-color: #5a37b0;
+    }
+    .toggle-link {
+      margin-top: 10px;
+      cursor: pointer;
+      color: #6C45D5;
+    }
+    /* Back button for sub-content */
+    .back-button {
+      margin-bottom: 15px;
+      cursor: pointer;
+      color: #6C45D5;
+      font-weight: bold;
+    }
+    @media (max-width: 400px) {
+      .phone-mock { width: 100%; border-radius: 0; }
+      .icon-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (min-width: 1024px) {
+      .phone-mock { width: 100%; border-radius: 0; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Notification Element -->
+  <div id="notification"></div>
+  <!-- Splash Screen (Login/Sign-Up) -->
+  <div id="splash">
+    <img src="https://pbs.twimg.com/profile_images/1615271089705463811/v-emhrqu_200x200.png" alt="Logo">
+    <h1>Phone Pe</h1>
+    <!-- Local Login Form -->
+    <div class="login-form" id="local-login">
+      <input type="text" id="username" placeholder="Username" required>
+      <input type="password" id="password" placeholder="Password" required>
+      <button onclick="login()">Sign In</button>
+      <span class="toggle-link" onclick="toggleToRegister()">Create New Account</span>
+    </div>
+    <!-- Registration Form (initially hidden) -->
+    <div class="register-form" id="register-form" style="display: none;">
+      <h2>Create Account</h2>
+      <input type="text" id="new-username" placeholder="Username" required>
+      <input type="password" id="new-password" placeholder="Password" required>
+      <button onclick="createAccount()">Create Account</button>
+      <span class="toggle-link" onclick="toggleToLogin()">Already have an account? Sign In</span>
+    </div>
+  </div>
+  <!-- Main Content -->
+  <div id="data">
+    <div class="phone-mock">
+      <div class="phone-header">
+        <h1>Phone Pe</h1>
+        <div class="location">Location</div>
+      </div>
+      <div class="phone-content" id="content-area">
+        <!-- Content will load here -->
+      </div>
+      <div class="phone-nav">
+        <a href="#" class="active" onclick="showContent('home')">Home</a>
+        <a href="#" onclick="showContent('stores')">Stores</a>
+        <a href="#" onclick="showContent('insurance')">Insurance</a>
+        <a href="#" onclick="showContent('wealth')">Wealth</a>
+        <a href="#" onclick="showContent('history')">History</a>
+      </div>
+    </div>
+  </div>
+  <script>
+    // Global variable to track the current logged in user
+    let currentUser = '';
+
+    // --------------------------
+    // Custom Notification Function
+    // --------------------------
+    function displayNotification(message, type = 'success') {
+      const notification = document.getElementById('notification');
+      notification.textContent = message;
+      if (type === 'error') {
+        notification.classList.add('error');
+      } else {
+        notification.classList.remove('error');
+      }
+      notification.style.opacity = '1';
+      setTimeout(() => { notification.style.opacity = '0'; }, 3000);
+    }
+
+    // --------------------------
+    // Local Login / Registration
+    // --------------------------
+    function login() {
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const storedPassword = localStorage.getItem(username);
+      if (storedPassword && storedPassword === password) {
+        currentUser = username; // set current user
+        displayNotification('Logged in successfully as: ' + username);
+        enterApp();
+      } else {
+        displayNotification('Invalid username or password', 'error');
+      }
+    }
+    function createAccount() {
+      const newUsername = document.getElementById('new-username').value;
+      const newPassword = document.getElementById('new-password').value;
+      if (newUsername && newPassword) {
+        if (localStorage.getItem(newUsername)) {
+          displayNotification('Username already exists. Please choose a different one.', 'error');
+        } else {
+          localStorage.setItem(newUsername, newPassword);
+          displayNotification('Account created successfully! You can now log in.');
+          toggleToLogin();
+        }
+      } else {
+        displayNotification('Please fill in all fields', 'error');
+      }
+    }
+    function toggleToRegister() {
+      document.getElementById('local-login').style.display = 'none';
+      document.getElementById('register-form').style.display = 'flex';
+    }
+    function toggleToLogin() {
+      document.getElementById('local-login').style.display = 'flex';
+      document.getElementById('register-form').style.display = 'none';
+    }
+    // --------------------------
+    // Enter the main app view
+    // --------------------------
+    function enterApp() {
+      document.getElementById("splash").classList.add("fade-out");
+      setTimeout(function () {
+        document.getElementById("splash").style.display = "none";
+        document.getElementById("data").style.display = "flex";
+        showContent('home');
+      }, 800);
+    }
+    // --------------------------
+    // Main Content Templates
+    // --------------------------
+    const homeContent = `
+      <div class="section-title">Transfer Money</div>
+      <div class="icon-grid">
+        <div class="icon-item" onclick="openSubContent('mobileToMobile')">
+          <img src="https://via.placeholder.com/40" alt="Mobile">
+          <span>To Mobile</span>
+        </div>
+        <div class="icon-item" onclick="openSubContent('toBank')">
+          <img src="https://via.placeholder.com/40" alt="Bank">
+          <span>To Bank</span>
+        </div>
+        <div class="icon-item" onclick="openSubContent('toSelf')">
+          <img src="https://via.placeholder.com/40" alt="Self">
+          <span>To Self</span>
+        </div>
+        <div class="icon-item" onclick="openSubContent('checkBalance')">
+          <img src="https://via.placeholder.com/40" alt="Balance">
+          <span>Check Bal.</span>
+        </div>
+      </div>
+      <div class="upi-row">
+        <div class="upi-item">My UPI ID: Rdhanani@ybl</div>
+        <div class="upi-item">Rewards</div>
+        <div class="upi-item">Refer & Get 100</div>
+      </div>
+      <div class="section-title">Recharge & Pay Bills</div>
+      <div class="bill-section">
+        <div class="icon-grid">
+          <div class="icon-item">
+            <img src="https://via.placeholder.com/40" alt="Mobile">
+            <span>Mobile</span>
+          </div>
+          <div class="icon-item">
+            <img src="https://via.placeholder.com/40" alt="DTH">
+            <span>DTH</span>
+          </div>
+          <div class="icon-item">
+            <img src="https://via.placeholder.com/40" alt="Electricity">
+            <span>Electricity</span>
+          </div>
+          <div class="icon-item">
+            <img src="https://via.placeholder.com/40" alt="Credit Card">
+            <span>Credit Card</span>
+          </div>
+        </div>
+      </div>
+      <div class="section-title">Sponsored Links</div>
+      <div class="sponsored-links">
+        <div class="icon-grid">
+          <div class="icon-item">
+            <img src="https://via.placeholder.com/40" alt="Store">
+            <span>Stores</span>
+          </div>
+          <div class="icon-item">
+            <img src="https://via.placeholder.com/40" alt="Insurance">
+            <span>Insurance</span>
+          </div>
+          <div class="icon-item">
+            <img src="https://via.placeholder.com/40" alt="Wealth">
+            <span>Wealth</span>
+          </div>
+        </div>
+      </div>
+    `;
+    const storeContent = `
+      <div class="section-title">Nearby Stores</div>
+      <div class="icon-grid">
+        <div class="icon-item">
+          <img src="https://via.placeholder.com/40" alt="Grocery Store">
+          <span>Grocery Store</span>
+        </div>
+        <div class="icon-item">
+          <img src="https://via.placeholder.com/40" alt="Electronics Store">
+          <span>Electronics</span>
+        </div>
+        <div class="icon-item">
+          <img src="https://via.placeholder.com/40" alt="Clothing Store">
+          <span>Clothing</span>
+        </div>
+        <div class="icon-item">
+          <img src="https://via.placeholder.com/40" alt="Pharmacy">
+          <span>Pharmacy</span>
+        </div>
+      </div>
+    `;
+    const insuranceContent = `
+      <div class="section-title">Insurance Plans</div>
+      <div class="icon-grid">
+        <div class="icon-item">
+          <img src="https://via.placeholder.com/40" alt="Health Insurance">
+          <span>Health Insurance</span>
+        </div>
+        <div class="icon-item">
+          <img src="https://via.placeholder.com/40" alt="Car Insurance">
+          <span>Car Insurance</span>
+        </div>
+        <div class="icon-item">
+          <img src="https://via.placeholder.com/40" alt="Home Insurance">
+          <span>Home Insurance</span>
+        </div>
+        <div class="icon-item">
+          <img src="https://via.placeholder.com/40" alt="Travel Insurance">
+          <span>Travel Insurance</span>
+        </div>
+      </div>
+    `;
+    const wealthContent = `
+      <div class="section-title">Wealth Management</div>
+      <div class="icon-grid">
+        <div class="icon-item">
+          <img src="https://via.placeholder.com/40" alt="Investments">
+          <span>Investments</span>
+        </div>
+        <div class="icon-item">
+          <img src="https://via.placeholder.com/40" alt="Retirement Plans">
+          <span>Retirement Plans</span>
+        </div>
+        <div class="icon-item">
+          <img src="https://via.placeholder.com/40" alt="Mutual Funds">
+          <span>Mutual Funds</span>
+        </div>
+        <div class="icon-item">
+          <img src="https://via.placeholder.com/40" alt="Tax Planning">
+          <span>Tax Planning</span>
+        </div>
+      </div>
+    `;
+    // History view is generated dynamically without a Clear History button
+    function getHistoryContent() {
+      let history = localStorage.getItem('transactionHistory');
+      if (!history) {
+        return `<div class="section-title">Transaction History</div><p>No transactions yet.</p>`;
+      }
+      let transactions = JSON.parse(history);
+      let html = `<div class="section-title">Transaction History</div><ul>`;
+      transactions.forEach(tx => {
+        html += `<li>${tx}</li>`;
+      });
+      html += `</ul>`;
+      return html;
+    }
+    const historyContent = () => getHistoryContent();
+    // --------------------------
+    // Sub-content Templates for Home Icons
+    // --------------------------
+    const mobileToMobileContent = `
+      <div class="back-button" onclick="showContent('home')">&larr; Back</div>
+      <div class="section-title">Mobile to Mobile Transfer</div>
+      <p>Please fill in the details below and confirm with your password.</p>
+      <form id="mobileTransferForm" onsubmit="submitMobileTransfer(event)">
+        <input type="text" id="recipientNumber" placeholder="Recipient Mobile Number" required style="margin-bottom:10px; padding:8px; width:90%;">
+        <input type="number" id="transferAmount" placeholder="Amount" required style="margin-bottom:10px; padding:8px; width:90%;">
+        <input type="password" id="confirmPassword" placeholder="Enter your password" required style="margin-bottom:10px; padding:8px; width:90%;">
+        <button type="submit" style="padding:10px 20px; background-color:#6C45D5; color:#fff; border:none; border-radius:5px; cursor:pointer;">Transfer</button>
+      </form>
+    `;
+    const toBankContent = `
+      <div class="back-button" onclick="showContent('home')">&larr; Back</div>
+      <div class="section-title">Transfer to Bank</div>
+      <p>This is the Transfer to Bank page.</p>
+    `;
+    const toSelfContent = `
+      <div class="back-button" onclick="showContent('home')">&larr; Back</div>
+      <div class="section-title">Transfer to Self</div>
+      <p>This is the Transfer to Self page.</p>
+    `;
+    const checkBalanceContent = `
+      <div class="back-button" onclick="showContent('home')">&larr; Back</div>
+      <div class="section-title">Check Balance</div>
+      <p>This is the Check Balance page.</p>
+    `;
+    // --------------------------
+    // Open Sub-Content Function for Home Items
+    // --------------------------
+    function openSubContent(subSection) {
+      const contentArea = document.getElementById('content-area');
+      switch (subSection) {
+        case 'mobileToMobile':
+          contentArea.innerHTML = mobileToMobileContent;
+          break;
+        case 'toBank':
+          contentArea.innerHTML = toBankContent;
+          break;
+        case 'toSelf':
+          contentArea.innerHTML = toSelfContent;
+          break;
+        case 'checkBalance':
+          contentArea.innerHTML = checkBalanceContent;
+          break;
+        default:
+          showContent('home');
+          break;
+      }
+    }
+    // --------------------------
+    // Show Content Function for Main Navigation
+    // --------------------------
+    function showContent(section) {
+      const contentArea = document.getElementById('content-area');
+      const navLinks = document.querySelectorAll('.phone-nav a');
+      navLinks.forEach(link => link.classList.remove('active'));
+      switch (section) {
+        case 'home':
+          contentArea.innerHTML = homeContent;
+          navLinks[0].classList.add('active');
+          break;
+        case 'stores':
+          contentArea.innerHTML = storeContent;
+          navLinks[1].classList.add('active');
+          break;
+        case 'insurance':
+          contentArea.innerHTML = insuranceContent;
+          navLinks[2].classList.add('active');
+          break;
+        case 'wealth':
+          contentArea.innerHTML = wealthContent;
+          navLinks[3].classList.add('active');
+          break;
+        case 'history':
+          contentArea.innerHTML = historyContent();
+          navLinks[4].classList.add('active');
+          break;
+      }
+    }
+    // --------------------------
+    // Submit handler for Mobile to Mobile Transfer Form
+    // --------------------------
+    function submitMobileTransfer(event) {
+      event.preventDefault();
+      const recipient = document.getElementById('recipientNumber').value;
+      const amount = document.getElementById('transferAmount').value;
+      const enteredPassword = document.getElementById('confirmPassword').value;
+      const storedPassword = localStorage.getItem(currentUser);
+      if (enteredPassword === storedPassword) {
+        const transaction = `Transfer of $${amount} to ${recipient} on ${new Date().toLocaleString()}`;
+        let history = localStorage.getItem('transactionHistory');
+        let transactions = history ? JSON.parse(history) : [];
+        transactions.push(transaction);
+        localStorage.setItem('transactionHistory', JSON.stringify(transactions));
+        displayNotification(`Transfer of $${amount} to ${recipient} successful!`);
+      } else {
+        displayNotification('Password confirmation failed. Please try again.', 'error');
+      }
+    }
+    // --------------------------
+    // Listen for Enter key press on login form fields
+    // --------------------------
+    document.getElementById('username').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { login(); }
+    });
+    document.getElementById('password').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { login(); }
+    });
+  </script>
+</body>
+</html>
