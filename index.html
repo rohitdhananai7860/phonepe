@@ -267,6 +267,11 @@
     </div>
   </div>
   <script>
+    // Helper function: Validate password contains only numbers
+    function isNumericPassword(pass) {
+      return /^\d+$/.test(pass);
+    }
+
     // Global variable to track the current logged in user
     let currentUser = '';
 
@@ -286,11 +291,15 @@
     }
 
     // --------------------------
-    // Local Login / Registration
+    // Local Login / Registration with Numeric Password Check
     // --------------------------
     function login() {
       const username = document.getElementById('username').value;
       const password = document.getElementById('password').value;
+      if (!isNumericPassword(password)) {
+        displayNotification('Password should only include numbers.', 'error');
+        return;
+      }
       const storedPassword = localStorage.getItem(username);
       if (storedPassword && storedPassword === password) {
         currentUser = username; // set current user
@@ -303,6 +312,10 @@
     function createAccount() {
       const newUsername = document.getElementById('new-username').value;
       const newPassword = document.getElementById('new-password').value;
+      if (!isNumericPassword(newPassword)) {
+        displayNotification('Password should only include numbers.', 'error');
+        return;
+      }
       if (newUsername && newPassword) {
         if (localStorage.getItem(newUsername)) {
           displayNotification('Username already exists. Please choose a different one.', 'error');
@@ -800,6 +813,65 @@
     }
 
     // --------------------------
+    // New: History View with Search & Clear
+    // --------------------------
+    function getHistoryContent() {
+      let history = localStorage.getItem('transactionHistory');
+      let fullTransactions = history ? JSON.parse(history) : [];
+      // Build an array of objects with original index and text
+      let fullObjList = fullTransactions.map((tx, index) => ({ text: tx, index: index }));
+      let html = '<div class="section-title">Transaction History</div>';
+      html += `<input type="text" id="historySearch" placeholder="Search history..." style="padding:8px; width:80%; margin-bottom:10px;" onkeyup="searchHistory()">`;
+      html += '<div id="historyContainer">';
+      html += renderHistoryTable(fullObjList);
+      html += '</div>';
+      html += `<div style="margin-top:10px;">
+                 <button onclick="printHistory()" style="padding:8px 12px; margin-right:10px;">Print</button>
+                 <button onclick="downloadHistoryPdf()" style="padding:8px 12px; margin-right:10px;">Download PDF</button>
+                 <button onclick="clearHistory()" style="padding:8px 12px;">Clear History</button>
+               </div>`;
+      return html;
+    }
+    function renderHistoryTable(transactions) {
+      if (transactions.length === 0) {
+        return '<p>No transactions found.</p>';
+      }
+      let tableHtml = '<table>';
+      tableHtml += '<thead><tr><th>Transaction</th><th>Actions</th></tr></thead>';
+      tableHtml += '<tbody>';
+      transactions.forEach((txObj) => {
+        tableHtml += `<tr>
+                        <td>${txObj.text}</td>
+                        <td>
+                          <button onclick="copyTransaction(${txObj.index})" style="padding:4px 8px; margin-right: 5px;">Copy</button>
+                          <button onclick="deleteTransaction(${txObj.index})" style="padding:4px 8px;">Delete</button>
+                        </td>
+                      </tr>`;
+      });
+      tableHtml += '</tbody></table>';
+      return tableHtml;
+    }
+    function searchHistory() {
+      const searchTerm = document.getElementById('historySearch').value.toLowerCase();
+      let history = localStorage.getItem('transactionHistory');
+      let fullTransactions = history ? JSON.parse(history) : [];
+      let filtered = [];
+      fullTransactions.forEach((tx, index) => {
+        if (tx.toLowerCase().includes(searchTerm)) {
+          filtered.push({ text: tx, index: index });
+        }
+      });
+      document.getElementById('historyContainer').innerHTML = renderHistoryTable(filtered);
+    }
+    function clearHistory() {
+      if (confirm("Are you sure you want to clear the entire transaction history?")) {
+        localStorage.removeItem('transactionHistory');
+        displayNotification("Transaction history cleared!");
+        showContent('history');
+      }
+    }
+
+    // --------------------------
     // Open Sub-Content for Home Items
     // --------------------------
     function openSubContent(subSection) {
@@ -848,7 +920,7 @@
         case 'creditCardPayment':
           contentArea.innerHTML = creditCardPaymentContent;
           break;
-        // For Sponsored Links:
+        // Sponsored Links
         case 'store':
           contentArea.innerHTML = storeContent;
           break;
@@ -896,36 +968,8 @@
     }
 
     // --------------------------
-    // History Functions
+    // History Functions (copy, delete, print, download)
     // --------------------------
-    function getHistoryContent() {
-      let history = localStorage.getItem('transactionHistory');
-      let transactions = history ? JSON.parse(history) : [];
-      let html = '<div class="section-title">Transaction History</div>';
-      html += `<div style="margin-bottom:10px;">
-                <button onclick="printHistory()" style="padding:8px 12px; margin-right:10px;">Print</button>
-                <button onclick="downloadHistoryPdf()" style="padding:8px 12px;">Download PDF</button>
-              </div>`;
-      if (transactions.length === 0) {
-        html += '<p>No transactions yet.</p>';
-      } else {
-        html += '<div id="historyContainer">';
-        html += '<table>';
-        html += '<thead><tr><th>Transaction</th><th>Actions</th></tr></thead>';
-        html += '<tbody>';
-        transactions.forEach((tx, index) => {
-          html += `<tr>
-                    <td>${tx}</td>
-                    <td>
-                      <button onclick="copyTransaction(${index})" style="padding:4px 8px; margin-right: 5px;">Copy</button>
-                      <button onclick="deleteTransaction(${index})" style="padding:4px 8px;">Delete</button>
-                    </td>
-                  </tr>`;
-        });
-        html += '</tbody></table></div>';
-      }
-      return html;
-    }
     function copyTransaction(index) {
       let history = localStorage.getItem('transactionHistory');
       let transactions = history ? JSON.parse(history) : [];
